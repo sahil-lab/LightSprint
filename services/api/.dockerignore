@@ -1,0 +1,4 @@
+*
+!target/
+target/*
+!target/lightsprint-api-0.1.0.jar

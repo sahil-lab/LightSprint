@@ -1,0 +1,31 @@
+name: LightSprint checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lightsprint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phase-one:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the same containerized verification as local development
+        shell: pwsh
+        run: ./scripts/Verify.ps1
+      - name: Stop only this workflow's LightSprint services
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path .env) {
+            docker compose --env-file .env -p lightsprint -f infra/docker/compose.yaml stop
+            if ($LASTEXITCODE -ne 0) { throw "LightSprint shutdown failed." }
+          }
