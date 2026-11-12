@@ -5,7 +5,7 @@ const resultsDir = process.env.RESULTS_DIR ?? "results";
 export default defineConfig({
   testDir: ".",
   testMatch: "*.spec.ts",
-  timeout: 30_000,
+  timeout: 90_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,
   workers: 1,

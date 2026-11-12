@@ -11,8 +11,9 @@ skeleton)** from `05_LightSprint_Multi_Agent_Dev.pdf`, read in full before work.
 Implementation and verification status are tracked in [the plan](docs/PLAN.md).
 Do not interpret the proposed product capabilities as implemented features.
 
-**Verified:** formatting, production builds, 15 Java tests, 8 frontend tests,
-6 real Chromium smoke tests, and live database failure/recovery/persistence.
+**Verified foundation:** production builds, 15 Java tests, and live database
+failure/recovery/persistence. **Latest UI refinement:** frontend production build,
+8 unit tests and 9 real Chromium checks, plus a focused pointer-interaction rerun.
 Phase 0 Git initialization remains deferred by the user's decision.
 
 Phase 1 provides:
@@ -72,11 +73,22 @@ registries, but no application source or input is sent to an external service.
 
 ## Demo
 
-1. Open the dashboard and confirm PostgreSQL readiness and schema version `1`.
-2. Enter a synthetic title and one acceptance criterion per line.
-3. Select **Validate specification**. The result explicitly says nothing was
+1. Open the page and explore the original light sculpture. **Scatter** separates
+   its ribs; **Align** brings them together. Pointer movement changes the view.
+   The motion button pauses it; reduced-motion preferences are respected.
+   This is an interactive concept, not an agent run.
+2. Select **Enter the playground** and confirm live PostgreSQL readiness and
+   schema version `1`.
+3. Enter a synthetic title and one acceptance criterion per line, or select
+   **Use a synthetic example**.
+4. Select **Validate specification**. The result explicitly says nothing was
    saved or executed.
-4. Submit more than ten criteria to see an explicit validation failure.
+5. Submit more than ten criteria to see an explicit validation failure.
+
+The light study uses projected SVG geometry and locally served fonts, not
+external graphics services or a new 3D dependency. It pauses continuous motion
+when offscreen or when the page is hidden. Keyboard users can skip directly to
+the playground and operate the illustration's controls.
 
 ## Safety and limitations
 

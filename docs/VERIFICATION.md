@@ -8,6 +8,10 @@ initialization item remains explicitly deferred by user decision.
 No Phase 2+ implementation, remote CI run, benchmark, or production-readiness
 claim is included.
 
+The current light-sculpture UI refinement is documented at the end of this
+report. Historical Phase 1 results below remain historical; subsequent browser
+runs replace the default Playwright report directory.
+
 ## Environment observed
 
 - Docker Desktop Linux engine: 29.4.1; Compose: v5.1.3.
@@ -286,6 +290,113 @@ No Git diff/commit exists because Git initialization was explicitly declined.
   worktrees, domain APIs, merge gates, or benchmarks exist yet.
 - Next: await explicit Phase 2 authorization, then design domain/API permissions
   and idempotency before implementing project/spec persistence.
+- After the Phase 1 gate, the dashboard visual system was refined. The rerun of
+  `npm run format`, `npm run build`, and the Chromium suite passed: **6 tests,
+  0 failures**. Evidence images: `artifacts/e2e/dashboard.png` and
+  `artifacts/e2e/mobile.png`.
 - Runtime total ceilings remain 1.5 CPUs / 832 MiB, with no DB host port.
 - No cloud resources, real data, global runtime replacement, other-session
   activation, global Docker cleanup, or destructive data action occurred.
+
+## Light-sculpture UI refinement - 2026-11-12
+
+### Approved design and scope
+
+The user selected **interactive light sculpture** after rejecting the earlier
+typography-only passes. D-017 was written before implementation. The result
+replaces the oversized title sequence with an original ribbed light sculpture,
+pointer-responsive perspective, reversible scatter/align controls, a pause
+button, deliberate desktop/mobile composition, and a compact working playground.
+
+The 56-rib illustration is clearly labeled as a concept, not an agent run. Its
+projected geometry and materials are computed once; transitions move those
+surfaces at up to 30 updates per second, and typing in the form does not rebuild
+the sculpture. There is no WebGL runtime or new dependency. Self-hosted fonts,
+the API contract, the database, resource ceilings, and CSP remain unchanged.
+
+### Actual validation
+
+| Check                 | Observed result                                                                                                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Formatting            | Modified TypeScript, CSS, HTML and test sources formatted with existing Prettier.                                                                                                           |
+| Unit tests            | **8 passed**, zero failures.                                                                                                                                                                |
+| Compilation           | `tsc --noEmit` and Vite production build passed.                                                                                                                                            |
+| Browser suite         | **9 passed**, zero retries; final full run reported 4.3 minutes on the shared host. This is elapsed test time, not a benchmark.                                                             |
+| Focused pointer check | **1 passed** after adding an assertion against the actual computed perspective transform; also verified scatter/align, pause and offscreen state.                                           |
+| Existing workflows    | Real web/API/PostgreSQL success; server-side validation failure; malformed JSON; network failure/retry; absent future mutation routes and headers preserved.                                |
+| Motion and keyboard   | Geometry changes on Scatter and returns on Align; pause stops running animations; reduced motion is static; keyboard controls and skip-to-playground work.                                  |
+| Responsive rendering  | Checked 320 x 740, 390 x 844, 768 x 1024 and 1440 x 900. Heading, form fields and sculpture controls stay inside the viewport.                                                              |
+| Browser console       | Happy-path test records both page errors and console errors and passed with neither.                                                                                                        |
+| Visual inspection     | Inspected first-screen desktop/tablet/phone images, the full working page/mobile form, and the scattered sculpture. Refined heavy-looking initial geometry into thinner reflective ribbons. |
+
+A temporary component-wrapper syntax error was caught by Prettier before any
+replacement image was deployed. It was fixed, then compilation, unit tests and
+the full browser suite were rerun successfully. The old data-URL grain was
+observed blocked by CSP and removed; the policy was not weakened.
+
+The API code did not change, so Java compilation/tests and destructive-style
+database outage exercises were not repeated for this UI-only refinement.
+The live browser suite still exercised the real, running backend and database.
+
+### Exact commands
+
+Run from the LightSprint project directory. Docker remains the only runtime
+requirement on the host:
+
+```powershell
+docker compose --env-file .\.env -p lightsprint -f .\infra\docker\compose.yaml --profile tools run --rm --no-deps web-tool sh -lc 'npx prettier --write src/LightSculpture.tsx && npm test && npm run build'
+docker build --tag lightsprint-web:local .\apps\web
+docker compose --env-file .\.env -p lightsprint -f .\infra\docker\compose.yaml up -d --no-deps --wait --wait-timeout 120 web
+docker compose --env-file .\.env -p lightsprint -f .\infra\docker\compose.yaml --profile tools run --rm --no-deps e2e
+docker compose --env-file .\.env -p lightsprint -f .\infra\docker\compose.yaml --profile tools run --rm --no-deps e2e npm test -- --grep 'light sculpture rearranges'
+```
+
+Formatting was also run with narrower file lists after each affected edit. Each
+dependent build/recreate/test step was gated on the previous exit code. No npm
+installation, host runtime change, Git action, cloud deployment or other-project
+operation was performed.
+
+### Persistent evidence for this refinement
+
+- [Final frontend build/unit output](../artifacts/light-sculpture-build.log)
+- [Full nine-test browser output](../artifacts/light-sculpture-e2e.log)
+- [Focused pointer/scatter/pause output](../artifacts/light-sculpture-pointer.log)
+- [Desktop light study](../artifacts/e2e/light-study-1440.png)
+- [Tablet light study](../artifacts/e2e/light-study-768.png)
+- [Small-phone light study](../artifacts/e2e/light-study-320.png)
+- [Full desktop page](../artifacts/e2e/dashboard.png)
+- [Full mobile page](../artifacts/e2e/mobile.png)
+- [Scattered state](../artifacts/e2e/sculpture-scattered.png)
+
+The default Playwright JSON/JUnit/HTML report paths now contain the **most recent
+focused one-test run**, not the earlier nine-test suite. The complete nine-test
+stdout remains in `artifacts/light-sculpture-e2e.log`; do not confuse the two.
+
+### Changed files in this refinement
+
+Added:
+
+- [LightSculpture.tsx](../apps/web/src/LightSculpture.tsx)
+
+Modified:
+
+- [App.tsx](../apps/web/src/App.tsx)
+- [styles.css](../apps/web/src/styles.css)
+- [index.html](../apps/web/index.html)
+- [favicon.svg](../apps/web/public/favicon.svg)
+- [smoke.spec.ts](../tests/e2e/smoke.spec.ts)
+- [playwright.config.ts](../tests/e2e/playwright.config.ts): removed an unsupported
+  `use.animations` option; screenshot calls use the supported per-capture option.
+- [README.md](../README.md)
+- [PLAN.md](PLAN.md)
+- [DECISIONS.md](DECISIONS.md)
+- [VERIFICATION.md](VERIFICATION.md)
+
+### Handoff
+
+The new web image is running at <http://127.0.0.1:18105>. Only LightSprint's web
+container was replaced; API/database services and other projects were left
+alone. One-shot check containers exited. No remaining UI implementation blocker
+was observed. The work remains a local Phase 1 prototype, not an award winner or
+a finished multi-agent product. Phase 2 and Git initialization still require
+separate permission.

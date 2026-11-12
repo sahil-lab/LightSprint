@@ -40,3 +40,24 @@ Use a normal project-owned edge bridge for web/API and retain a separate interna
 API/database network. No database host port, extra host port, public binding,
 runtime privilege, or resource ceiling change is needed. Verify effective
 bindings, not only configuration or container-local health.
+
+## D-017: interactive light-sculpture art direction
+
+The user explicitly selected `light-sculpture` after rejecting the typography-only
+redesigns. Replace the sparse title sequence with an original, visibly
+three-dimensional light study, a deliberate first-screen composition, and a
+compact functional playground. The sculpture is an illustration of alignment,
+not a task graph, agent run, performance measurement, or Phase 2 feature.
+
+Use procedurally projected SVG geometry and the existing self-hosted fonts.
+No external image service, graphics dependency, cloud service, runtime network
+request, CSP relaxation, or backend change is required. The earlier blocked
+data-URL grain effect is removed rather than permitting inline images.
+
+Acceptance for this refinement: obvious visual change at desktop and phone
+sizes; keyboard-operable scatter/align and motion controls; a static, usable
+reduced-motion state; no continuous animation while offscreen or hidden;
+unobscured anchor navigation; preserved API success/failure behavior; and
+format/typecheck/build/unit/browser evidence. Inspect actual screenshots and
+browser console output, not only passing HTTP checks. Do not claim an award or
+objective aesthetic multiplier.

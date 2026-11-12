@@ -71,5 +71,39 @@ if the user separately authorizes it.
 
 The local dashboard is available at <http://127.0.0.1:18105>; the API readiness
 endpoint is <http://127.0.0.1:18205/actuator/health/readiness>.
+
+A later visual refinement replaced the flat skeleton styling with self-hosted
+Instrument Serif and Instrument Sans. A second pass turned the first screen into
+a full-viewport title sequence, moving constraint reel, credit-style stack, and
+closing slate. It did not change API behavior. Frontend production build and 6
+Chromium smoke tests passed again after that change.
 Only application services remain running; the temporary test DB is stopped and
 one-shot tooling containers exit automatically.
+
+## Light-sculpture refinement
+
+User-approved direction: an interactive light sculpture, not another
+typography-only reskin. The design and accessibility boundary is documented in
+D-017 before implementation.
+
+- [x] Replace the title sequence with the light sculpture and coherent workspace.
+- [x] Preserve Phase 1 validation and explicit error/retry behavior.
+- [x] Verify motion controls, reduced motion, keyboard access and responsive sizes.
+- [x] Run frontend formatting, typecheck/build/unit tests and real browser checks.
+- [x] Inspect desktop/mobile screenshots and persist actual results.
+
+Status: **implemented and verified**. The new design includes an original
+56-rib projected light sculpture, pointer-responsive perspective, scatter/align
+controls, a pause button, reduced-motion support, and a compact playground.
+The illustration is explicitly not a live agent run. No backend, dependency,
+Compose-resource, or security-policy change was needed.
+
+Observed checks: 8 frontend unit tests, TypeScript/Vite production build, and
+9 real Chromium tests passed. An additional focused run passed the strengthened
+pointer-transform assertion, alignment controls, pause, and offscreen behavior.
+Desktop, tablet, small-phone, full-page mobile, and scattered-state captures were
+visually inspected. See the light-sculpture section of [verification](VERIFICATION.md).
+
+Only the LightSprint web container was replaced. API/database services and all
+other projects were left untouched. The next engineering phase is still gated
+on explicit Phase 2 authorization.

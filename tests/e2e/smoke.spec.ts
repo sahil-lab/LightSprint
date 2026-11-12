@@ -8,12 +8,15 @@ test("real browser validates a synthetic specification through web, API and Post
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
   const readiness = await request.get(`${apiUrl}/actuator/health/readiness`);
   expect(readiness.status()).toBe(200);
   expect(await readiness.json()).toEqual({ status: "UP" });
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Good engineering starts");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Many minds. One direction.");
   await expect(page.getByText("PostgreSQL connected")).toBeVisible();
   await expect(page.getByText("Schema version 1")).toBeVisible();
   await page.getByRole("button", { name: "Use a synthetic example" }).click();
@@ -29,9 +32,11 @@ test("real browser validates a synthetic specification through web, API and Post
   await expect(page.getByRole("status")).toContainText("Validated 2 acceptance criteria.");
   await expect(page.getByRole("status")).toContainText("Nothing was saved or executed.");
   expect(errors).toEqual([]);
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await page.screenshot({
     path: `${process.env.RESULTS_DIR ?? "results"}/dashboard.png`,
     fullPage: true,
+    animations: "disabled",
   });
 });
 
@@ -107,4 +112,126 @@ test("the mobile layout remains usable without horizontal overflow", async ({ pa
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
+  await page.screenshot({
+    path: `${process.env.RESULTS_DIR ?? "results"}/mobile.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+});
+
+test("the light sculpture rearranges and pauses without executing anything", async ({ page }) => {
+  const writes: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST") writes.push(request.url());
+  });
+  await page.goto("/");
+  const study = page.getByRole("figure", { name: "Interactive light sculpture" });
+  const pointer = study.locator(".sculpture-pointer");
+  const restingTransform = await pointer.evaluate((element) => getComputedStyle(element).transform);
+  const stage = await study.locator(".sculpture-stage").boundingBox();
+  if (!stage) throw new Error("The light study must have a visible interaction surface.");
+  await page.mouse.move(stage.x + stage.width * 0.8, stage.y + stage.height * 0.25);
+  await expect
+    .poll(() => pointer.evaluate((element) => getComputedStyle(element).transform))
+    .not.toBe(restingTransform);
+  const face = study.locator('[data-face="4-3"]');
+  const original = await face.getAttribute("transform");
+  if (!original) throw new Error("The sculpture must render real geometry.");
+
+  await study.getByRole("button", { name: "Scatter", exact: true }).click();
+  await expect(study).toHaveAttribute("data-alignment", "scattered");
+  await expect(face).not.toHaveAttribute("transform", original);
+  await study.getByRole("button", { name: "Pause sculpture motion" }).click();
+  await expect(study).toHaveAttribute("data-motion", "paused");
+  await expect
+    .poll(() =>
+      study.evaluate(
+        (element) =>
+          element
+            .getAnimations({ subtree: true })
+            .filter((animation) => animation.playState === "running").length,
+      ),
+    )
+    .toBe(0);
+  await page.screenshot({
+    path: `${process.env.RESULTS_DIR ?? "results"}/sculpture-scattered.png`,
+    animations: "disabled",
+  });
+
+  await study.getByRole("button", { name: "Align", exact: true }).click();
+  await expect(face).toHaveAttribute("transform", original);
+  await expect(study.getByRole("button", { name: "Align", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await study.getByRole("button", { name: "Play sculpture motion" }).click();
+  await expect(study).toHaveAttribute("data-motion", "playing");
+  await page.getByRole("link", { name: "Enter the playground" }).click();
+  await expect(study).toHaveAttribute("data-motion", "paused");
+  expect(writes).toEqual([]);
+});
+
+test("reduced motion is static and keyboard navigation reaches the working form", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const study = page.getByRole("figure", { name: "Interactive light sculpture" });
+  await expect(study).toHaveAttribute("data-motion", "paused");
+  await expect(
+    study.getByRole("button", { name: "Sculpture motion disabled by reduced-motion preference" }),
+  ).toBeDisabled();
+  expect(
+    await page.evaluate(
+      () =>
+        document.getAnimations().filter((animation) => animation.playState === "running").length,
+    ),
+  ).toBe(0);
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("link", { name: "Skip to playground" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/#playground$/);
+  const heading = await page
+    .getByRole("heading", { name: "A clear idea. A good place to start." })
+    .boundingBox();
+  expect(heading?.y).toBeGreaterThanOrEqual(0);
+  expect(heading?.y).toBeLessThan(400);
+  const scatter = study.getByRole("button", { name: "Scatter", exact: true });
+  await scatter.focus();
+  await page.keyboard.press("Enter");
+  await expect(study).toHaveAttribute("data-alignment", "scattered");
+  await expect(study).toHaveAttribute("data-motion", "paused");
+});
+
+test("the sculpture, typography and controls fit small phones, tablets and desktop", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const viewport of [
+    { width: 320, height: 740 },
+    { width: 768, height: 1024 },
+    { width: 1440, height: 900 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await page.evaluate(() => document.fonts.ready);
+    await expect(page.getByText("PostgreSQL connected")).toBeVisible();
+    for (const selector of ["h1", "#spec-title", "#spec-criteria", ".study-controls"]) {
+      const box = await page.locator(selector).boundingBox();
+      if (!box) throw new Error(`${selector} must be rendered at ${viewport.width}px.`);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    }
+    const textFits = await page
+      .locator("h1")
+      .evaluate((element) => element.scrollWidth <= element.clientWidth);
+    expect(textFits).toBe(true);
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await page.screenshot({
+      path: `${process.env.RESULTS_DIR ?? "results"}/light-study-${viewport.width}.png`,
+      animations: "disabled",
+    });
+  }
 });
