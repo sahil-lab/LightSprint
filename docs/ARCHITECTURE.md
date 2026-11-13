@@ -39,7 +39,13 @@ web/API containers at the Docker layer; the application makes no external calls.
 ## Components
 
 - `apps/web`: React/TypeScript, Vite, plain CSS, typed and runtime-checked API
-  boundary, explicit loading/error states, and frontend tests.
+  boundary, explicit loading/error states, and frontend tests. Its background
+  is a hand-written WebGL2 particle scene in `src/experience` (no graphics
+  dependency): `engine` draws, `director` drives motion and scrolling,
+  `quality` picks the detail level from frame times, and `formations` and
+  `scenes` hold the pure geometry and scroll mapping. The scene is decoration
+  plus three real signals (stack health, a validation ripple, a rejection
+  tint); it runs no agent and reads no repository.
 - `services/api`: Spring Boot MVC, Bean Validation, JDBC, PostgreSQL, Flyway,
   Actuator, sanitized Problem Details, and structured console logs.
 - `packages/contracts`: versioned OpenAPI contract for the skeleton only.
@@ -74,6 +80,8 @@ through integration and browser HTTP tests.
 - HTTP 200: database-backed system status or valid, validation-only input.
 - HTTP 400: invalid fields, unknown fields, or malformed JSON.
 - HTTP 503: a database read cannot complete.
+- HTTP 502 or 504 from the web proxy: the API is not running, is still starting,
+  or did not answer in time. The page stays available and reports the failure.
 - No endpoint silently substitutes mock state when the database fails.
 - Frontend failures are visible and can be retried without page reload.
 - Actuator exposes health only; configuration and environment are not exposed.
@@ -93,7 +101,9 @@ through integration and browser HTTP tests.
 | test-db  |        0.50 |        256 MiB |         128 |
 | e2e      |        1.00 |        768 MiB |         256 |
 
-Long-running services total at most **1.5 CPUs and 832 MiB**. Verification runs
+Long-running services total at most **1.5 CPUs and 832 MiB**. They start with
+Docker and after a crash (`restart: unless-stopped`, D-022), in any order
+(D-021), so this budget is in use whenever Docker runs. Verification runs
 tooling serially with one test worker. Compiler/package commands run in bounded
 containers, rather than unconstrained multi-stage Docker builds. Docker builds
 only assemble already-verified artifacts.

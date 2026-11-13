@@ -5,8 +5,9 @@ const resultsDir = process.env.RESULTS_DIR ?? "results";
 export default defineConfig({
   testDir: ".",
   testMatch: "*.spec.ts",
-  timeout: 90_000,
-  expect: { timeout: 10_000 },
+  // The suite draws WebGL with a software renderer on one bounded CPU, which is slow.
+  timeout: 300_000,
+  expect: { timeout: 20_000 },
   fullyParallel: false,
   workers: 1,
   retries: 0,

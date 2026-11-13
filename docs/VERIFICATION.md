@@ -3,14 +3,22 @@
 ## Status
 
 **Phase 1 passed the final unified verifier with exit code 0.**
-Phase 0 design artifacts were written before implementation. Its Git
-initialization item remains explicitly deferred by user decision.
-No Phase 2+ implementation, remote CI run, benchmark, or production-readiness
-claim is included.
+Phase 0 design artifacts were written before implementation. No Phase 2+
+implementation, benchmark, or production-readiness claim is included.
 
-The current light-sculpture UI refinement is documented at the end of this
-report. Historical Phase 1 results below remain historical; subsequent browser
-runs replace the default Playwright report directory.
+**Repository and CI, as of 2026-11-12.** The sections below were written while
+this folder had no Git repository, and they say so; that was true then. A
+repository now exists, created by the user's account outside this session: two
+commits (`fb2b709`, `a89137b`) pushed to the public repository
+`github.com/sahil-lab/LightSprint`. GitHub ran the CI workflow on both pushes
+and both runs succeeded (2.5 and 2.9 minutes), read from the public run list.
+This session ran no Git write command and never ran CI. The real-time scene and
+the start-up fixes in the last two sections are uncommitted and have not been
+through CI. `.env` and `artifacts/` are untracked.
+
+The current interface is the real-time scene documented in its own section near
+the end of this report. Earlier results below are historical; each browser run
+replaces the default Playwright report directory.
 
 ## Environment observed
 
@@ -122,7 +130,7 @@ comparison.
 
 ## Final unified run: passed
 
-From `C:\Users\upadhsah\Desktop\project\LightSprint`:
+From the LightSprint project folder:
 
 ```powershell
 docker compose --env-file .\.env -p lightsprint -f .\infra\docker\compose.yaml --profile tools run --rm --no-deps web-tool npm run format
@@ -298,7 +306,13 @@ No Git diff/commit exists because Git initialization was explicitly declined.
 - No cloud resources, real data, global runtime replacement, other-session
   activation, global Docker cleanup, or destructive data action occurred.
 
-## Light-sculpture UI refinement - 2026-11-12
+## Light-sculpture UI refinement - 2026-11-12 (superseded)
+
+This design was rejected by the user and removed. `LightSculpture.tsx`, its
+styles, its nine browser tests and its screenshots no longer exist, so the file
+and image links in this section are historical and no longer resolve. The four
+`light-sculpture-*.log` files are kept. The current interface is described in
+the real-time section of this report.
 
 ### Approved design and scope
 
@@ -400,3 +414,254 @@ alone. One-shot check containers exited. No remaining UI implementation blocker
 was observed. The work remains a local Phase 1 prototype, not an award winner or
 a finished multi-agent product. Phase 2 and Git initialization still require
 separate permission.
+
+## Real-time scene - 2026-11-12
+
+### What changed and why
+
+The user asked a third time for an Awwwards-level interface. The earlier passes
+restyled a conventional page; D-018 changes the approach. The page background
+is now one WebGL2 particle scene that the page content sits on. The same
+particles form four shapes as the page scrolls: a swarm, a converging dependency
+graph, a calm field and a single-direction sprint. Around it: a loader that
+hands over to an intro burst, a headline that rises letter by letter, a pinned
+manifesto that lights up with scroll, glass panels, a cursor ring, magnetic
+buttons and inertial wheel scrolling.
+
+It is hand-written WebGL2 with the existing self-hosted fonts: no new
+dependency, no third-party request, CSP unchanged. The API, database, Compose
+resources and Phase 1 scope are unchanged. The only infrastructure change is the
+proxy read timeout in D-019.
+
+### Results on the final build
+
+| Check                     | Observed result                                                                                                                                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Formatting                | Whole project passes the existing Prettier check.                                                                                                                                                        |
+| Unit tests                | **22 passed** in 4 files: 8 existing HTTP-boundary tests, 3 formation, 5 scroll-mapping and 6 quality-control tests.                                                                                     |
+| Compilation               | `tsc --noEmit` and the Vite production build passed. JavaScript 272.86 kB (85.87 kB gzip), CSS 23.31 kB.                                                                                                 |
+| Browser suite             | **12 passed**, no retries, 5.9 minutes on the shared host. Elapsed test time, not a benchmark.                                                                                                           |
+| Phase 1 flows             | Real web/API/PostgreSQL validation, server-side rejection, malformed JSON, network failure and retry, absent future routes, headers and CORS: all still pass.                                            |
+| The scene is really drawn | Tests copy the WebGL canvas and read its pixels. Lit pixels appear after the intro, and each of the four scenes is a measurably different picture from the one before it.                                |
+| Pointer                   | The swarm opens around the pointer (brightness at its centre fell to about half) and closes when the pointer leaves. Cursor ring and magnetic button follow the pointer and reset.                       |
+| Scroll                    | The wheel is taken over and lands exactly on its target; the pinned manifesto goes from dim to fully lit across the section; anchor links glide to their section.                                        |
+| Scene responses           | A successful validation raises the lit area of the field (ripple). With the stack unreachable the scene dims to under half; it recovers on retry. A rejection turns the scene red and editing clears it. |
+| Still frames              | With `?render=still` the page scrolls natively, takes neither wheel nor pointer, and shows a different still picture for each section.                                                                   |
+| Reduced motion            | No running animations, no loader, no pinning; the same position always gives an identical picture; keyboard skip link reaches the playground.                                                            |
+| No WebGL2                 | With WebGL2 disabled the page shows its static backdrop, says so on the page and in the console, and the form still validates.                                                                           |
+| Responsive                | 320 x 740, 390 x 844, 768 x 1024 and 1440 x 900: each headline line stays on one line and inside the screen; form, button and readout stay inside the screen; no horizontal overflow.                    |
+| Console                   | The live and still-frame tests record page errors, console errors and WebGL error messages; there were none.                                                                                             |
+
+### Failures found and fixed
+
+- **Two real 504 responses.** The first full run failed the two validation tests
+  with HTTP 504. The API had answered correctly in 11.7 s and 6.0 s; nginx gave
+  up after 5 s. Reproduced by holding only this project's API for 9 s (504 at
+  5.17 s), fixed by a 30 s read timeout (200 at 8.64 s). See D-019. This was a
+  pre-existing weakness, exposed by this suite running a software renderer next
+  to the API.
+- **The animation was unusable on a slow renderer.** In the test container the
+  lowest quality took about 765 ms per frame, which made scrolling and the
+  cursor stutter. The page now detects this and switches to still frames; with
+  no preference set it settled 9.7 s after navigation.
+- **Sprint scene read as static noise.** The first version was uniform dots.
+  Particles now run in 26 lanes as streaks led by their brightest points.
+- **Graph was washed out on phones** and the field crowded the horizon. Dense
+  formations are drawn dimmer, narrow screens get lower gain, and distant light
+  fades out.
+- **Cursor ring turned purple over the lime buttons** (a difference blend). It
+  is now a neutral ring with a dark outer edge.
+- **Hero copy collided with the headline**, the header let content show
+  through, the manifesto ran under the graph, and the footer wordmark was
+  clipped. Each was fixed and re-inspected.
+
+### What was inspected by eye
+
+Stills of all four scenes, the playground and the footer at 1440 x 900 and
+390 x 844, rendered at the 56,000-particle level by overriding the reported
+renderer name; the loader at 1440 x 900; motion captures of the burst and of
+each morph at the 14,000-particle software level; the stack-unreachable,
+rejected, pointer and no-WebGL2 states; and the suite's own screenshots of the
+final build.
+
+### What is not verified
+
+- **Frame rate at full quality on a hardware GPU.** The test browser only has a
+  software renderer. The host's own Edge was run headless once: it reported
+  `webgl2`, a live loop and 56,000 particles (the hardware starting level) and
+  produced `host-edge-intro.png`, a frame of the intro burst with light trails.
+  That run used virtual time, so it shows the picture is drawn but measures no
+  frame rate. The quality control is covered by unit tests, not by a real GPU.
+- The VS Code browser tool could not be used: its page was reported missing
+  after opening, as in earlier passes.
+- Java tests and the database-outage exercise were not repeated: no API or
+  database code changed. The full `scripts/Verify.ps1` was not re-run; its
+  frontend parts (format check, unit tests, build, image, browser suite) were
+  run individually on the final build.
+- GitHub's CI has not seen this change. It passed on the two earlier commits,
+  but the changes here are uncommitted. The browser suite is now slower because
+  it draws WebGL in software, so the workflow's 30-minute limit is untested for
+  it (the earlier runs took under three minutes).
+- Safari and Firefox were not tested. Only Chromium was.
+
+### Exact commands
+
+From the LightSprint project directory. Docker is the only host requirement.
+
+```powershell
+docker compose --env-file .\.env -p lightsprint -f .\infra\docker\compose.yaml --profile tools run --rm --no-deps web-tool sh -lc 'npx prettier --write src ../../tests/e2e && npm test && npm run build'
+docker build --quiet --tag lightsprint-web:local .\apps\web
+docker compose --env-file .\.env -p lightsprint -f .\infra\docker\compose.yaml up -d --no-deps --wait --wait-timeout 120 web
+docker compose --env-file .\.env -p lightsprint -f .\infra\docker\compose.yaml --profile tools run --rm --no-deps e2e
+docker compose --env-file .\.env -p lightsprint -f .\infra\docker\compose.yaml --profile tools run --rm --no-deps web-tool npm run format:check
+```
+
+A single browser test can be run by name, for example:
+
+```powershell
+docker compose --env-file .\.env -p lightsprint -f .\infra\docker\compose.yaml --profile tools run --rm --no-deps e2e npm test -- --grep 'answers the pointer'
+```
+
+The 504 was reproduced with `docker pause lightsprint-api-1`, a request through
+the web proxy, and `docker unpause lightsprint-api-1` nine seconds later. Only
+this project's API container was paused, twice, and it returned to healthy each
+time. Temporary inspection scripts were run with the `e2e` service and deleted.
+The host Edge run used a throwaway profile inside `artifacts/`, also deleted.
+
+### Evidence
+
+- [Frontend unit tests and build](../artifacts/realtime-build.log) (first build
+  of this pass; later builds were read from the console)
+- [Final 12-test browser output](../artifacts/realtime-e2e.log)
+- Final-build screenshots in `artifacts/e2e/`: `scene-1-swarm.png`,
+  `scene-1-pointer.png`, `scene-2-graph.png`, `scene-3-field.png`,
+  `scene-4-sprint.png`, `validated.png`, `rejected.png`, `static-backdrop.png`,
+  `hero-{320,390,768,1440}.png`, `playground-{320,390,768,1440}.png`
+- `artifacts/e2e/host-edge-intro.png`: the host's Edge, 56,000 particles
+- Playwright JSON, JUnit and HTML reports of the final run in `artifacts/e2e/`
+
+The suite's screenshots come from the software renderer, so they show the
+14,000-particle level. The inspection stills at 56,000 particles were temporary
+and were deleted, along with the screenshots of the two superseded designs.
+
+### Changed files
+
+Added in `apps/web/src/experience/`:
+
+- [engine.ts](../apps/web/src/experience/engine.ts): WebGL2 renderer
+- [shaders.ts](../apps/web/src/experience/shaders.ts): particle, bloom and composite shaders
+- [director.ts](../apps/web/src/experience/director.ts): motion, scrolling, pointer, fallbacks
+- [formations.ts](../apps/web/src/experience/formations.ts) and its tests: particle positions
+- [scenes.ts](../apps/web/src/experience/scenes.ts) and its tests: scroll-to-scene mapping
+- [quality.ts](../apps/web/src/experience/quality.ts) and its tests: quality control
+
+Rewritten: [App.tsx](../apps/web/src/App.tsx),
+[styles.css](../apps/web/src/styles.css),
+[smoke.spec.ts](../tests/e2e/smoke.spec.ts).
+
+Modified: [main.tsx](../apps/web/src/main.tsx) (font file with the width axis),
+[index.html](../apps/web/index.html),
+[nginx.conf](../apps/web/nginx.conf) (D-019),
+[playwright.config.ts](../tests/e2e/playwright.config.ts) (longer timeouts),
+[README.md](../README.md), [PLAN.md](PLAN.md), [DECISIONS.md](DECISIONS.md),
+[ARCHITECTURE.md](ARCHITECTURE.md) and this report.
+
+Deleted: `apps/web/src/LightSculpture.tsx`.
+
+### Handoff
+
+The new web image is running at <http://127.0.0.1:18105>. Only LightSprint's
+web container was replaced; its API and database kept running, and no other
+project was touched. No Git write, npm installation, host runtime change or
+cloud deployment was made. Outside requests were limited to Docker registry
+metadata during image builds and read-only queries of the repository's public
+run list. All changes are uncommitted in the working
+tree. This remains a local Phase 1 prototype: it has won no award and is not a
+finished multi-agent product. Phase 2 still needs separate permission.
+
+## Connection refused after a restart - 2026-11-13
+
+### What happened
+
+Times are local. Neither start of the containers at 12:33 nor the restart of
+the PC was done by this session.
+
+- **12:33** All four LightSprint containers were started together after having
+  been down since about 11:35. The web container started 7 s before the API.
+  nginx stopped with `host not found in upstream "api"` (exit code 1) and
+  stayed down, while the API and the database were healthy. The user reported
+  "connection refused" at 12:44.
+- **About 12:51** The web container was started again and the page answered.
+- **13:03** The PC restarted. Docker Desktop was back at 13:15, but every
+  LightSprint container stayed stopped (exit code 255, restart policy `no`)
+  until this session started them at 13:32.
+
+### Fixes
+
+- D-021: nginx looks the API up per request, so the web server starts whether
+  or not the API is running.
+- D-022: `db`, `api` and `web` use `restart: unless-stopped`, chosen by the
+  user, so they start with Docker.
+
+### Checks
+
+| Check                                                                                              | Before the fix                                  | After the fix                                                                                                                                                |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Web image loads its configuration with no network, so the API name cannot be resolved (`nginx -t`) | Exit code 1, `host not found in upstream "api"` | Exit code 0                                                                                                                                                  |
+| Web container started alone with the API stopped                                                   | Crashed at start (the incident)                 | Healthy. Page 200 in 0.05 s; API through the page 502 in 4.2 s                                                                                               |
+| API started afterwards, web container untouched                                                    | Not applicable                                  | API through the page 200 in 0.2 s; web container not restarted                                                                                               |
+| All three stopped, then started together with `docker start`, web first and database last          | Not applicable                                  | Page 200 after 14 s, the first probe once the start command returned; API through the page 200 after 53 s; no container restarted                            |
+| Restart policy                                                                                     | `no` everywhere                                 | `unless-stopped` on `db`, `api`, `web`; `no` on `test-db`. CPU, memory and loopback ports unchanged                                                          |
+| Database row across the recreation of the containers                                               | `1\|2026-11-11 15:23:03.260168+00`              | Identical                                                                                                                                                    |
+| Web server ended from inside the container (`nginx -s quit`)                                       | Not applicable                                  | Docker restarted it; page 200 again after 2.2 s                                                                                                              |
+| API started while the database was stopped                                                         | Not applicable                                  | The API failed and Docker restarted it after 41 s. The database was then started and the API answered through the page 33 s later, with nobody restarting it |
+| Browser tests that go through the proxy                                                            | Not applicable                                  | 5 passed: validation, rejection, malformed JSON, network failure and retry, headers and absent routes                                                        |
+| Verifier                                                                                           | Not applicable                                  | Parses; its new step, run as written, passed                                                                                                                 |
+
+### Not verified
+
+- **A real Docker or PC restart with the new policy.** Restarting Docker would
+  stop every other project on this machine. Supporting observation: three other
+  containers on this machine that already use `unless-stopped` came back at
+  13:16:20, a minute after Docker Desktop started at 13:15:09.
+- The full `scripts/Verify.ps1`, the Java tests and the other seven browser
+  tests were not re-run. No Java, database or page code changed.
+- For about the first minute after a start the API is still booting. The page
+  loads and shows "Cannot load stack status" with its retry button; it does not
+  retry by itself.
+
+### Exact commands
+
+From the LightSprint project directory. `$c` stands for
+`docker compose --env-file .\.env -p lightsprint -f .\infra\docker\compose.yaml`.
+
+```powershell
+docker build --quiet --tag lightsprint-web:local .\apps\web
+docker run --rm --network none --memory 64m --cpus 0.25 --pids-limit 64 --entrypoint nginx lightsprint-web:local -t
+$c stop web api
+$c up -d --no-deps --wait --wait-timeout 60 web
+$c up -d --wait --wait-timeout 180 db api web
+docker stop lightsprint-web-1 lightsprint-api-1 lightsprint-db-1
+docker start lightsprint-web-1 lightsprint-api-1 lightsprint-db-1 lightsprint-test-db-1
+docker exec lightsprint-web-1 nginx -s quit
+docker stop lightsprint-api-1 lightsprint-db-1
+docker start lightsprint-api-1
+docker start lightsprint-db-1
+$c --profile tools run --rm --no-deps e2e npm test -- --grep 'real browser validates|server-side rejection|sanitized errors|network failure is visible|browser headers'
+```
+
+The page and the API were probed with `curl.exe --noproxy '*'` against
+`http://127.0.0.1:18105/` and `http://127.0.0.1:18105/api/v1/system`. Only
+LightSprint's own containers were stopped or started; the `test-db` container
+was stopped again afterwards. Browser test output:
+[proxy-fix-e2e.log](../artifacts/proxy-fix-e2e.log).
+
+### Changed files
+
+- [nginx.conf](../apps/web/nginx.conf): per-request lookup of the API (D-021)
+- [compose.yaml](../infra/docker/compose.yaml): restart policy (D-022)
+- [Verify.ps1](../scripts/Verify.ps1): start-up check for the web image
+- [README.md](../README.md), [PLAN.md](PLAN.md), [DECISIONS.md](DECISIONS.md),
+  [ARCHITECTURE.md](ARCHITECTURE.md) and this report
+
+All of it is uncommitted, like the real-time scene.

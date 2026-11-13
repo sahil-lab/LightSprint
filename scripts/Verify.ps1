@@ -92,6 +92,11 @@ try {
     Invoke-Compose -Arguments @('--profile', 'tools', 'run', '--rm', '--no-deps', 'web-tool', 'npm', 'test')
     Invoke-Compose -Arguments @('--profile', 'tools', 'run', '--rm', '--no-deps', 'web-tool', 'npm', 'run', 'build')
     Invoke-Compose -Arguments @('build', 'api', 'web')
+    # The web server must start while the API's host name cannot be resolved, which is the
+    # case whenever the web container is started before the API container.
+    Write-Host 'docker run --rm --network none --entrypoint nginx lightsprint-web:local -t'
+    & docker run --rm --network none --memory 64m --cpus 0.25 --pids-limit 64 --entrypoint nginx lightsprint-web:local -t
+    if ($LASTEXITCODE -ne 0) { throw 'The web server cannot start without a resolvable API host name.' }
     Invoke-Compose -Arguments @('up', '-d', '--wait', '--wait-timeout', '180', 'db', 'api', 'web')
 
     Add-Type -AssemblyName System.Net.Http

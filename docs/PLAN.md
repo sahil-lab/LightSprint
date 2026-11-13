@@ -5,11 +5,17 @@
 - Engineering PDF: all 3 pages read completely, including prompts 6-9 and the
   eventual definition of done.
 - Execute Phase 0, then Phase 1 only. Prompts for subsequent phases are deferred.
-- Operate only in `C:\Users\upadhsah\Desktop\project\LightSprint`.
+- Operate only in the LightSprint project folder.
 - Docker verified responsive: Linux engine 29.4.1, Compose v5.1.3.
 - Shared-host constraints: Compose `lightsprint`, web 18105, API 18205, no DB
   host port, bounded resources, no other session activation.
-- User decision: **leave Git uninitialized**. No commits, remotes, or pushes.
+- User decision at the start: **leave Git uninitialized**. No commits, remotes,
+  or pushes by this session.
+- **Update, 2026-11-12:** a Git repository now exists in this folder with two
+  commits by the user's account (`fb2b709`, `a89137b`), pushed to the public
+  repository `github.com/sahil-lab/LightSprint`. It was created outside this
+  session. This session has still run no Git write command; its later changes
+  are uncommitted in the working tree.
 
 ## Phase 0 - contract and safety
 
@@ -18,11 +24,13 @@
 - [x] Document architecture, API boundaries, persistence, and resource budgets.
 - [x] Document threat model and safety/approval restrictions.
 - [x] Establish ignore rules, coding conventions, and CI/local check contract.
-- [ ] Initialize Git repository: **explicitly deferred by user decision**.
+- [x] Initialize Git repository: deferred by this session at the user's
+      decision; **done by the user outside this session on 2026-11-12**.
 
 Gate: requirements/architecture/safety artifacts precede implementation.
-The Git exception is visible and must not be represented as completed.
-CI is authored only; remote execution is not authorized or claimed.
+CI was authored by this session and never run by it. After the user pushed,
+GitHub ran the workflow on both commits and both runs succeeded (2.5 and 2.9
+minutes, read from the public run list on 2026-11-12).
 
 ## Phase 1 - working skeleton
 
@@ -48,8 +56,8 @@ limits, database outage/recovery, persistent bootstrap metadata, and exactly one
 successful Flyway migration after database/application restarts.
 See [verification evidence](VERIFICATION.md).
 
-Phase 0 remains complete **except for the explicitly deferred Git initialization
-item**. CI is authored but has not been run remotely. No later phase was begun.
+Phase 0 is complete. Its Git item was deferred here and later done by the user;
+see the update under "Authority and scope". No later phase was begun.
 
 ## Deferred phases
 
@@ -66,8 +74,8 @@ merges are **later MVP acceptance criteria**, not Phase 1 benchmark results.
 
 Await authorization for Phase 2. Begin with domain/API and permission contracts,
 then add project/spec persistence and idempotency with focused integration tests.
-Do not introduce agents, worktrees, or merges yet. Revisit Git initialization only
-if the user separately authorizes it.
+Do not introduce agents, worktrees, or merges yet. Commits and pushes stay with
+the user unless they ask for them.
 
 The local dashboard is available at <http://127.0.0.1:18105>; the API readiness
 endpoint is <http://127.0.0.1:18205/actuator/health/readiness>.
@@ -107,3 +115,55 @@ visually inspected. See the light-sculpture section of [verification](VERIFICATI
 Only the LightSprint web container was replaced. API/database services and all
 other projects were left untouched. The next engineering phase is still gated
 on explicit Phase 2 authorization.
+
+**Superseded.** The user rejected this result as well; the sculpture and its
+page were removed and replaced by the real-time scene below.
+
+## Real-time scene
+
+The user asked a third time for an Awwwards-level interface. D-018 records the
+change of approach: the page background is now one real-time WebGL2 particle
+scene that morphs through four formations as the page scrolls, with a loader,
+a headline that rises letter by letter, a pinned manifesto, glass panels, a
+cursor ring, magnetic buttons and inertial scrolling.
+
+- [x] Record the approach, constraints and acceptance (D-018) before building.
+- [x] Build the particle engine, quality control and scroll-to-scene mapping.
+- [x] Rebuild the page around the scene; keep every Phase 1 behaviour.
+- [x] Add still-frame and static fallbacks and reduced-motion behaviour.
+- [x] Unit-test the pure logic; rewrite the browser suite to read real pixels.
+- [x] Inspect every scene at desktop and phone sizes and fix what was wrong.
+- [x] Fix the proxy timeout the browser suite exposed (D-019).
+
+Status: **implemented and verified**. 22 frontend unit tests, the TypeScript
+and Vite production build, and 12 real Chromium tests passed on the final
+build. No dependency, API, database, Compose resource or security-policy change
+was made apart from the proxy timeout in D-019.
+
+What is not verified: the frame rate of the full-quality animation on a
+hardware GPU. The test browser has only a software renderer. The host's own
+Edge was run headless once and reported a hardware renderer and 56,000
+particles, but that run used virtual time and measures no frame rate. See the
+real-time section of [verification](VERIFICATION.md).
+
+These changes are uncommitted. The two commits on GitHub hold the earlier
+light-sculpture interface, and CI has not seen the real-time scene.
+
+Only the LightSprint web container was replaced. The next engineering phase is
+still gated on explicit Phase 2 authorization.
+
+## Start-up fixes (2026-11-13)
+
+The page refused connections twice in one day: once because the web server
+crashed when the containers were started together, and once because nothing
+started them after the PC restarted.
+
+- [x] The web server no longer needs the API in order to start (D-021).
+- [x] The three services start with Docker, at the user's choice (D-022).
+- [x] The verifier checks that the web image starts without a resolvable API.
+
+Status: **fixed and checked** by reproducing the crash before the fix, starting
+the containers together in the worst order after it, and making the web server
+and the API fail so that Docker had to bring them back. Not checked: a real
+Docker or PC restart, because that would stop every other project on this
+machine. See the last section of [verification](VERIFICATION.md).

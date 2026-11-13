@@ -1,6 +1,8 @@
 name: lightsprint
 
 services:
+  # db, api and web come back by themselves when Docker starts and after a crash.
+  # Stopping them with `docker compose stop` keeps them stopped across Docker restarts.
   db:
     image: postgres:17-alpine@sha256:3540c0362c809df084ffac0ae69fe794515f9de92692f02178bcdce0ef0302ac
     environment:
@@ -21,7 +23,7 @@ services:
       timeout: 3s
       retries: 12
       start_period: 10s
-    restart: "no"
+    restart: unless-stopped
 
   api:
     image: lightsprint-api:local
@@ -53,7 +55,7 @@ services:
       timeout: 4s
       retries: 24
       start_period: 30s
-    restart: "no"
+    restart: unless-stopped
 
   web:
     image: lightsprint-web:local
@@ -78,7 +80,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 12
-    restart: "no"
+    restart: unless-stopped
 
   test-db:
     profiles: [tools]

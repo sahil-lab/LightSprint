@@ -61,3 +61,124 @@ unobscured anchor navigation; preserved API success/failure behavior; and
 format/typecheck/build/unit/browser evidence. Inspect actual screenshots and
 browser console output, not only passing HTTP checks. Do not claim an award or
 objective aesthetic multiplier.
+
+## D-018: real-time WebGL scene replaces the static sculpture
+
+The user rejected D-017's result a second time with the same request: an
+Awwwards-level experience. The SVG sculpture was a still illustration placed on
+a conventional page. Sites of that kind are built differently, so the approach
+changes rather than the styling:
+
+- The page background is one real-time WebGL2 particle scene. The same particles
+  form four shapes that morph as the page scrolls: a swarm, a converging
+  dependency graph, a calm field and a single-direction sprint.
+- The scene has light trails, two-level bloom, depth of field, fog, grain and a
+  filmic grade, and it answers the pointer, each validation result and the
+  health of the local stack.
+- The page adds a loader that hands over to an intro burst, a headline that
+  rises letter by letter, a pinned manifesto that lights up with scroll, glass
+  panels, a cursor ring, magnetic buttons and inertial wheel scrolling.
+
+Constraints kept: no new dependency and no third-party request (hand-written
+WebGL2, existing self-hosted fonts); CSP unchanged; API, database, Compose
+resources and Phase 1 scope unchanged. The scene is labelled as an illustration,
+not an agent run or a live plan.
+
+Required behaviour: quality adapts to measured frame time; software renderers
+start at the lowest level; without WebGL2 a static backdrop is shown and the
+page says so; with reduced motion there is no loop, no pinning, no cursor or
+scroll takeover, only still frames. Keyboard, touch and scrollbar scrolling stay
+native.
+
+Acceptance: unit tests for the pure formation and scroll-mapping logic; browser
+tests that read real canvas pixels, prove the picture changes between scenes
+and is still under reduced motion, and re-run every Phase 1 flow; screenshots
+of every scene inspected at desktop and phone sizes. No award or multiplier is
+claimed.
+
+Decisions taken while building it:
+
+- **Three ways to draw, chosen by what the browser can do.** Live: a frame loop
+  with trails, pointer response and inertial scrolling. Still frames: one frame
+  per scene, drawn on demand, with native scrolling. Static backdrop: a CSS
+  gradient when WebGL2 is missing or a frame cannot be drawn. The page states
+  which one is active.
+- **A renderer that cannot animate stops trying.** The test browser's software
+  renderer drew about one frame every 0.77 s at the lowest quality. A loop that
+  slow makes the whole page stutter, so after roughly three seconds below about
+  15 frames per second at the lowest quality the page switches to still frames
+  for the rest of the visit. `?render=live` and `?render=still` force a mode;
+  the browser tests use them because their renderer is always the slow one.
+- **Reduced motion gets whole scenes only.** No loop, no pinning, no cursor ring
+  and no scroll takeover; the scene changes only when a new section is reached.
+- **The scene reports real state.** It dims and loses colour while the local
+  stack is unreachable, ripples once when a specification validates, and turns
+  red for a rejection (a short flash when live; for as long as the rejection is
+  shown in still frames).
+- **Quality is measured, not assumed.** Four levels from 14,000 to 96,000
+  particles. The median frame time of each window decides; a level that proved
+  too slow is never tried again in the same visit.
+
+## D-019: proxy read timeout raised from 5 s to 30 s
+
+Found by the first full browser run of D-018, not by inspection: two validation
+requests returned HTTP 504. The API had answered correctly, in 11.7 s and
+6.0 s, but nginx gave up after 5 s. The API has a 0.75 CPU share on a busy host
+and its first request after a long idle is slow. Holding only this project's
+API for 9 s reproduced the 504 at 5.17 s; with a 30 s read timeout the same
+request returned 200 after 8.64 s.
+
+The timeout stays bounded, the 3 s connect timeout and the 16 kB body cap are
+unchanged, and both ports remain loopback-only. A stalled API can now hold a
+proxy connection for up to 30 s instead of 5 s, which matters only if the stack
+were exposed; it must not be. The interface already reports a proxy failure as
+an error rather than as success.
+
+## D-020: the repository belongs to the user; agents still do not commit
+
+D-002 recorded the user's choice to leave Git uninitialized. On 2026-11-12 the
+user's account created the repository, committed twice and pushed to a public
+GitHub repository; GitHub ran the CI workflow on both pushes and both runs
+succeeded. None of this was done by the build session.
+
+D-002's rule for agents stands: no commit, push or remote change without an
+explicit request. Work is left uncommitted in the working tree and reported.
+Because the repository is public, `.env` and `artifacts/` must stay untracked
+(they are), and documents should not contain local paths or account names.
+
+## D-021: the web server no longer needs the API in order to start
+
+On 2026-11-13 the page refused connections. All four LightSprint containers had
+been started together, outside `docker compose up`, with the web container 7 s
+ahead of the API. nginx resolves a fixed `proxy_pass` host name once, when it
+starts; Docker's DNS only knows running containers, so nginx stopped with "host
+not found in upstream api" and stayed down.
+
+nginx now looks the API up per request through Docker's built-in DNS (a
+`resolver` and a variable in `proxy_pass`), re-checked every 10 s. The web
+server starts in any order and survives the API container being replaced. While
+the API is down the proxy answers 502, after about 4 s here (the time Docker's
+DNS takes to give up on the name), and the interface shows its existing "Cannot
+load stack status" error with its retry button. The interface does not retry by
+itself.
+
+Compose still starts the web container only after the API is healthy. The
+verifier now loads the web image's configuration with no resolvable API name;
+that check fails on the old configuration.
+
+## D-022: the three services start with Docker (user decision)
+
+Later the same day the PC restarted and nothing started LightSprint again:
+every service had restart policy `no`. Asked whether LightSprint should start
+automatically with Docker Desktop, the user chose yes.
+
+`db`, `api` and `web` now use `restart: unless-stopped`; `test-db` and the tool
+services do not. Docker starts the three together, in no particular order, so
+D-021 is a precondition. The API still gives up if the database is not
+reachable when it starts; Docker then restarts it until the database is up.
+`docker compose stop` keeps a service stopped across Docker restarts, which is
+how to switch LightSprint off.
+
+Cost: LightSprint uses its share (at most 1.5 CPUs and 832 MiB, unchanged)
+whenever Docker runs, and a service that cannot start is retried for as long as
+Docker runs, within its CPU limit.

@@ -33,7 +33,9 @@ execution. The last boundary remains closed in this phase.
 ## Non-negotiable restrictions
 
 - Never auto-merge protected branches or expose repository secrets to agents.
-- No Git initialization after the user's refusal; no commits/remotes/pushes.
+- No commits, remotes or pushes by an agent without explicit permission. The
+  user declined Git initialization at the start and later created and pushed
+  the repository themselves; that does not extend permission to agents.
 - No cloud resources, billing, real user data, or other project/session access.
 - Do not claim benchmark, security, CI, or production results that were not run.
 - Do not globally prune Docker, stop other projects, or delete database volumes.
